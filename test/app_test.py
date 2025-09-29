@@ -84,3 +84,28 @@ def test_delete_message(client):
     rv = client.get("/delete/1")
     data = json.loads(rv.data)
     assert data["status"] == 1
+
+
+def test_search(client):
+    """Ensure that search returns expected results"""
+    login(client, app.config["USERNAME"], app.config["PASSWORD"])
+    # Add a post to search for
+    client.post(
+        "/add",
+        data=dict(title="TestTitle", text="TestContent"),
+        follow_redirects=True,
+    )
+    # Search for the post by title
+    rv = client.get("/search/?query=TestTitle")
+    assert b"TestTitle" in rv.data
+    assert b"TestContent" in rv.data
+
+def test_login_required(client):
+    """Ensure protected routes require login"""
+    # Try to delete without logging in
+    rv = client.get("/delete/1")
+    data = json.loads(rv.data)
+    assert data["status"] == 0
+    assert data["message"] == "Please log in."
+    assert rv.status_code == 401
+
